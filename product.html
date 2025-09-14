@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TechGod Phones — Admin</title>
+<style>
+body{font-family:sans-serif; background:#f1f5f9; margin:0; padding:0;}
+header{background:#5b21b6;color:white;padding:12px;text-align:center;}
+.container{max-width:900px;margin:20px auto;background:white;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #ddd;}
+th{background:#f3f4f6;}
+button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;margin-right:4px;}
+button.edit{background:#3b82f6;color:white;}
+button.del{background:#ef4444;color:white;}
+button.save{background:#16a34a;color:white;margin-top:8px;}
+input,select,textarea{width:100%;padding:6px;margin:4px 0 10px 0;border-radius:6px;border:1px solid #ccc;}
+h2{margin-top:0;}
+</style>
+</head>
+<body>
+<header><h1>TechGod Phones — Admin Panel</h1></header>
+<div class="container">
+  <h2>Current Products</h2>
+  <table id="productTable">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Category</th><th>Price (GH₵)</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Add / Edit Product</h2>
+  <form id="productForm">
+    <input type="hidden" id="prodId">
+    <label>Name</label>
+    <input id="prodName" required>
+    <label>Category</label>
+    <select id="prodCat" required>
+      <option value="new">New</option>
+      <option value="used">Used</option>
+    </select>
+    <label>Price (GH₵)</label>
+    <input id="prodPrice" type="number" required>
+    <label>Image URL</label>
+    <input id="prodImg" required>
+    <label>Description</label>
+    <textarea id="prodDesc" rows="3" required></textarea>
+    <button type="submit" class="save">Save Product</button>
+  </form>
+</div>
+
+<script>
+const LS_KEY = 'techgodProducts';
+let products = [];
+const tableBody = document.querySelector('#productTable tbody');
+const form = document.getElementById('productForm');
+const prodId = document.getElementById('prodId');
+const prodName = document.getElementById('prodName');
+const prodCat = document.getElementById('prodCat');
+const prodPrice = document.getElementById('prodPrice');
+const prodImg = document.getElementById('prodImg');
+const prodDesc = document.getElementById('prodDesc');
+
+/* LOAD PRODUCTS FROM LS OR DEFAULT */
+function loadProducts(){
+  const saved = localStorage.getItem(LS_KEY);
+  if(saved){ products = JSON.parse(saved); } 
+  else { products = []; localStorage.setItem(LS_KEY, JSON.stringify(products)); }
+  renderTable();
+}
+
+/* RENDER TABLE */
+function renderTable(){
+  tableBody.innerHTML='';
+  products.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td>${p.id}</td>
+      <td>${p.name}</td>
+      <td>${p.category}</td>
+      <td>${p.price}</td>
+      <td>
+        <button class="edit" onclick="editProduct('${p.id}')">Edit</button>
+        <button class="del" onclick="deleteProduct('${p.id}')">Delete</button>
+      </td>`;
+    tableBody.appendChild(tr);
+  });
+}
+
+/* EDIT */
+function editProduct(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  prodId.value = p.id;
+  prodName.value = p.name;
+  prodCat.value = p.category;
+  prodPrice.value = p.price;
+  prodImg.value = p.img;
+  prodDesc.value = p.desc;
+}
+
+/* DELETE */
+function deleteProduct(id){
+  if(!confirm('Delete this product?')) return;
+  products = products.filter(x=>x.id!==id);
+  localStorage.setItem(LS_KEY, JSON.stringify(products));
+  renderTable();
+}
+
+/* SAVE FORM */
+form.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const id = prodId.value || 'p'+Date.now();
+  const newProd = {
+    id:id,
+    name:prodName.value,
+    category:prodCat.value,
+    price:parseFloat(prodPrice.value),
+    img:prodImg.value,
+    desc:prodDesc.value
+  };
+  const idx = products.findIndex(x=>x.id===id);
+  if(idx>-1){ products[idx]=newProd; }
+  else{ products.push(newProd); }
+  localStorage.setItem(LS_KEY, JSON.stringify(products));
+  form.reset();
+  renderTable();
+});
+loadProducts();
+</script>
+</body>
+</html>

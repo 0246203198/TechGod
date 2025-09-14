@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TechGod Phones Shop</title>
+<style>
+:root {
+  --bg-color: #f1f5f9;
+  --text-color: #111;
+  --header-bg: #5b21b6;
+  --header-text: #fff;
+  --card-bg: #fff;
+  --card-shadow: rgba(0,0,0,0.1);
+  --btn-bg: #3b82f6;
+  --btn-text: #fff;
+  --cart-bg: #fff;
+}
+body{font-family:sans-serif;margin:0;padding:0;background:var(--bg-color);color:var(--text-color);}
+header{background:var(--header-bg);color:var(--header-text);padding:15px;text-align:center;position:relative;}
+header h1{margin:0;font-size:24px;}
+#modeToggle{position:absolute;top:15px;left:15px;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;background:#fbbf24;color:#111;font-weight:bold;}
+.cart-toggle{position:absolute;top:15px;right:15px;background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:50%;width:40px;height:40px;font-weight:bold;font-size:16px;cursor:pointer;}
+.cart-toggle span{position:absolute;top:-5px;right:-5px;background:#ef4444;color:white;border-radius:50%;width:20px;height:20px;display:flex;justify-content:center;align-items:center;font-size:12px;}
+.container{max-width:1000px;margin:20px auto;padding:10px;}
+.tabs{display:flex;gap:10px;margin-bottom:15px;}
+.tabs button{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer;background:#e5e7eb;color:#111;font-weight:bold;}
+.tabs button.active{background:var(--btn-bg);color:var(--btn-text);}
+.search-bar{margin-bottom:15px;}
+.search-bar input{width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;}
+.section-title{margin-top:20px;font-size:20px;color:#1e3a8a;}
+.grid{display:flex;flex-wrap:wrap;gap:15px;margin-top:10px;}
+.card{background:var(--card-bg);padding:10px;border-radius:10px;box-shadow:0 4px 10px var(--card-shadow);width:220px;display:flex;flex-direction:column;align-items:center;position:relative;transition:transform 0.3s, box-shadow 0.3s;}
+.card:hover{transform:translateY(-5px);box-shadow:0 8px 15px var(--card-shadow);}
+.card img{width:180px;height:180px;object-fit:cover;border-radius:10px;transition:transform 0.3s;}
+.card img:hover{transform:scale(1.1);}
+.card h3{margin:8px 0 4px 0;font-size:16px;text-align:center;}
+.card p{margin:2px 0;font-size:14px;text-align:center;}
+.card button{margin-top:6px;padding:6px 10px;background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:6px;cursor:pointer;}
+.label{position:absolute;top:10px;left:10px;background:#16a34a;color:white;padding:4px 8px;font-size:12px;border-radius:4px;font-weight:bold;}
+.label.used{background:#ef4444;}
+.cart{position:fixed;top:0;right:-300px;background:var(--cart-bg);padding:10px;width:300px;height:100%;box-shadow:-3px 0 10px rgba(0,0,0,0.2);overflow:auto;transition:0.3s;z-index:999;}
+.cart.active{right:0;}
+.cart h3{margin-top:0;text-align:center;}
+.cart-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.cart-item span{font-size:14px;}
+.cart-item button{padding:2px 6px;background:#ef4444;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-left:5px;}
+.quantity-controls{display:flex;align-items:center;gap:5px;}
+.quantity-controls button{padding:2px 5px;background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:4px;cursor:pointer;font-size:12px;}
+.cart-total{font-weight:bold;margin-top:10px;text-align:center;}
+.cart button.order{width:100%;margin-top:10px;background:#16a34a;cursor:pointer;}
+
+@media(max-width:600px){
+  .grid{flex-direction:column;align-items:center;}
+  .card{width:90%;}
+  .cart{width:90%;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>TechGod Phones Shop</h1>
+<button id="modeToggle">🌙</button>
+<button class="cart-toggle" id="cartToggle">🛒<span id="cartCount">0</span></button>
+</header>
+
+<div class="container">
+<div class="tabs">
+  <button class="tab-btn active" data-cat="all">All</button>
+  <button class="tab-btn" data-cat="new">New</button>
+  <button class="tab-btn" data-cat="used">Used</button>
+</div>
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search phones...">
+</div>
+<div id="shopContainer"></div>
+</div>
+
+<div class="cart" id="cart">
+<h3>Cart</h3>
+<div id="cartItems"></div>
+<div class="cart-total" id="cartTotal">Total: GH₵ 0</div>
+<button class="order" onclick="orderWhatsApp()">Order via WhatsApp</button>
+</div>
+
+<script>
+/* ====== PRODUCTS & CART ====== */
+const LS_PRODUCTS='techgodProducts';
+const LS_CART='techgodCart';
+let PRODUCTS=[], cart=[];
+const savedProducts = localStorage.getItem(LS_PRODUCTS);
+if(savedProducts){ try{ PRODUCTS = JSON.parse(savedProducts);}catch(e){ PRODUCTS=defaultProducts(); } } else PRODUCTS=defaultProducts();
+const savedCart = localStorage.getItem(LS_CART);
+if(savedCart){ try{ cart=JSON.parse(savedCart);}catch(e){ cart=[]; } }
+
+function defaultProducts(){ return [
+{id:'n1', category:'new', name:'iPhone 14 Pro — 128GB', price:11500, img:'https://m.media-amazon.com/images/I/61YSNhAb00L._AC_SL1500_.jpg', desc:'128GB, 6.1" Super Retina XDR display, Pro camera, brand new sealed box + 1 yr warranty.'},
+{id:'n2', category:'new', name:'Samsung Galaxy S23 — 256GB', price:9500, img:'https://m.media-amazon.com/images/I/71HUnJvHsbL._AC_SL1500_.jpg', desc:'256GB, 6.1" Dynamic AMOLED, 50MP main camera, sealed box.'},
+{id:'u1', category:'used', name:'iPhone 12 — 64GB', price:3800, img:'https://m.media-amazon.com/images/I/71i2XhHU3pL._AC_SL1500_.jpg', desc:'64GB, neat, ~85% battery health, tested, 3-month warranty.'},
+{id:'u2', category:'used', name:'Samsung Galaxy S21 — 128GB', price:3499, img:'https://m.media-amazon.com/images/I/81z2k0n5j8L._AC_SL1500_.jpg', desc:'128GB, good condition, no major scratches.'}
+];}
+
+/* ====== RENDER PRODUCTS ====== */
+const container=document.getElementById('shopContainer');
+const searchInput=document.getElementById('searchInput');
+const tabs=document.querySelectorAll('.tab-btn');
+let currentFilter='all';
+
+function renderProducts(){
+container.innerHTML='';
+const filtered=PRODUCTS.filter(p=>{
+if(currentFilter!=='all' && p.category!==currentFilter) return false;
+if(searchInput.value && !p.name.toLowerCase().includes(searchInput.value.toLowerCase())) return false;
+return true;
+});
+filtered.forEach(p=>{
+const card=document.createElement('div'); card.className='card';
+card.innerHTML=`<div class="label ${p.category==='used'?'used':''}">${p.category==='new'?'New':'Used'}</div>
+<img src="${p.img}" alt="${p.name}"><h3>${p.name}</h3><p>${p.desc}</p><p><strong>GH₵ ${p.price}</strong></p><button onclick="addToCart('${p.id}')">Add to Cart</button>`;
+container.appendChild(card);
+});
+}
+
+/* ====== CART FUNCTIONS ====== */
+const cartDiv=document.getElementById('cart');
+const cartItemsDiv=document.getElementById('cartItems');
+const cartTotalDiv=document.getElementById('cartTotal');
+const cartCountSpan=document.getElementById('cartCount');
+
+function addToCart(id){ const existing=cart.find(x=>x.id===id);
+if(existing){ existing.qty++; } else { const p=PRODUCTS.find(x=>x.id===id); if(p) cart.push({...p, qty:1}); }
+saveCart(); updateCart(); }
+
+function removeFromCart(index){ cart.splice(index,1); saveCart(); updateCart(); }
+
+function changeQty(index,delta){ cart[index].qty+=delta; if(cart[index].qty<1) cart.splice(index,1); saveCart(); updateCart(); }
+
+function updateCart(){ cartItemsDiv.innerHTML=''; let total=0;
+cart.forEach((p,i)=>{ total+=p.price*p.qty;
+const div=document.createElement('div'); div.className='cart-item';
+div.innerHTML=`<span>${p.name} (GH₵ ${p.price})</span>
+<div class="quantity-controls">
+<button onclick="changeQty(${i},-1)">-</button>
+<span>${p.qty}</span>
+<button onclick="changeQty(${i},1)">+</button>
+<button onclick="removeFromCart(${i})">X</button>
+</div>`; cartItemsDiv.appendChild(div); });
+cartTotalDiv.textContent='Total: GH₵ '+total;
+cartCountSpan.textContent=cart.reduce((sum,p)=>sum+p.qty,0); }
+
+function saveCart(){ localStorage.setItem(LS_CART,JSON.stringify(cart)); }
+
+function orderWhatsApp(){ if(cart.length===0){ alert('Cart is empty!'); return; }
+const number='0509873200'; let message='Hello, I want to order:\n';
+cart.forEach(p=>{ message+=`- ${p.name} x${p.qty} (GH₵ ${p.price})\n`; });
+message+=`Total: GH₵ ${cart.reduce((sum,p)=>sum+p.price*p.qty,0)}`;
+window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`,'_blank'); }
+
+/* ====== CART & TABS ====== */
+document.getElementById('cartToggle').addEventListener('click',()=>{ cartDiv.classList.toggle('active'); });
+searchInput.addEventListener('input',renderProducts);
+tabs.forEach(btn=>{ btn.addEventListener('click',()=>{ tabs.forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentFilter=btn.getAttribute('data-cat'); renderProducts(); }); });
+
+/* ====== DARK/LIGHT MODE ====== */
+const modeBtn = document.getElementById('modeToggle');
+let darkMode = localStorage.getItem('darkMode')==='true';
+function applyMode(){
+if(darkMode){
+document.documentElement.style.setProperty('--bg-color','#111827');
+document.documentElement.style.setProperty('--text-color','#f1f5f9');
+document.documentElement.style.setProperty('--header-bg','#1f2937');
+document.documentElement.style.setProperty('--header-text','#f1f5f9');
+document.documentElement.style.setProperty('--card-bg','#1f2937');
+document.documentElement.style.setProperty('--card-shadow','rgba(0,0,0,0.5)');
+document.documentElement.style.setProperty('--btn-bg','#3b82f6');
+document.documentElement.style.setProperty('--btn-text','#fff');
+modeBtn.textContent='☀️';
+}else{
+document.documentElement.style.setProperty('--bg-color','#f1f5f9');
+document.documentElement.style.setProperty('--text-color','#111');
+document.documentElement.style.setProperty('--header-bg','#5b21b6');
+document.documentElement.style.setProperty('--header-text','#fff');
+document.documentElement.style.setProperty('--card-bg','#fff');
+document.documentElement.style.setProperty('--card-shadow','rgba(0,0,0,0.1)');
+document.documentElement.style.setProperty('--btn-bg','#3b82f6');
+document.documentElement.style.setProperty('--btn-text','#fff');
+modeBtn.textContent='🌙';
+}
+localStorage.setItem('darkMode',darkMode);
+}
+modeBtn.addEventListener('click',()=>{ darkMode=!darkMode; applyMode(); });
+
+/* ====== INIT ====== */
+renderProducts(); updateCart(); applyMode();
+</script>
+</body>
+</html>
